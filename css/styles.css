@@ -45,7 +45,8 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
   background: var(--bg);
@@ -53,7 +54,9 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.hidden { display: none !important; }
+.hidden {
+  display: none !important;
+}
 
 .app-shell {
   display: flex;
@@ -141,7 +144,8 @@ html, body {
   min-width: 220px;
 }
 
-.search-box, .date-filter-box {
+.search-box,
+.date-filter-box {
   display: flex;
   align-items: center;
   background: var(--surface-alt);
@@ -156,7 +160,8 @@ html, body {
   max-width: 340px;
 }
 
-.search-box input, .date-filter-box input {
+.search-box input,
+.date-filter-box input {
   border: none;
   background: transparent;
   color: var(--text);
@@ -186,12 +191,35 @@ html, body {
   white-space: nowrap;
 }
 
-.btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--accent); color: #FFF; }
-.btn-primary:hover { background: var(--accent-hover); }
-.btn-secondary { background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); }
-.btn-danger { background: var(--danger); color: #FFF; }
-.btn-xs { padding: 4px 9px; font-size: 0.78rem; border-radius: 6px; }
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #FFF;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #FFF;
+}
+
+.btn-xs {
+  padding: 4px 9px;
+  font-size: 0.78rem;
+  border-radius: 6px;
+}
 
 .icon-btn {
   background: transparent;
@@ -204,7 +232,10 @@ html, body {
   line-height: 1;
 }
 
-.icon-btn:hover { background: var(--surface-alt); border-color: var(--border); }
+.icon-btn:hover {
+  background: var(--surface-alt);
+  border-color: var(--border);
+}
 
 /* Pending Alerts Banner */
 .pending-banner {
@@ -244,7 +275,9 @@ html, body {
   overflow-y: auto;
 }
 
-.pending-list.collapsed { display: none; }
+.pending-list.collapsed {
+  display: none;
+}
 
 .pending-chip {
   display: inline-flex;
@@ -342,9 +375,20 @@ html, body {
   gap: 12px;
 }
 
-.drop-icon { font-size: 1.7rem; }
-.link-accent { color: var(--accent); text-decoration: underline; }
-.drop-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+.drop-icon {
+  font-size: 1.7rem;
+}
+
+.link-accent {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.drop-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
 
 /* Diary Composer */
 .diary-composer {
@@ -477,7 +521,8 @@ html, body {
   color: var(--text-muted);
 }
 
-.card-notes, .diary-text {
+.card-notes,
+.diary-text {
   font-size: 0.87rem;
   color: var(--text-sec);
   white-space: pre-wrap;
@@ -684,13 +729,26 @@ html, body {
 }
 
 /* Mobile Bottom Nav & Responsive Breakpoint */
-.bottom-nav { display: none; }
-.mobile-only-pane { display: none; }
-.mobile-only-inline { display: none; }
+.bottom-nav {
+  display: none;
+}
+
+.mobile-only-pane {
+  display: none;
+}
+
+.mobile-only-inline {
+  display: none;
+}
 
 @media (max-width: 820px) {
-  .desktop-only { display: none !important; }
-  .mobile-only-inline { display: inline-flex; }
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only-inline {
+    display: inline-flex;
+  }
 
   .topbar {
     padding: 8px 12px;
@@ -702,7 +760,9 @@ html, body {
     order: 3;
   }
 
-  .search-box { max-width: none; }
+  .search-box {
+    max-width: none;
+  }
 
   .workspace {
     grid-template-columns: 1fr;
@@ -710,9 +770,17 @@ html, body {
     gap: 0;
   }
 
-  .pane { display: none; }
-  .pane.active { display: flex; }
-  .mobile-only-pane.active { display: flex; }
+  .pane {
+    display: none;
+  }
+
+  .pane.active {
+    display: flex;
+  }
+
+  .mobile-only-pane.active {
+    display: flex;
+  }
 
   .bottom-nav {
     display: grid;
@@ -737,8 +805,13 @@ html, body {
     cursor: pointer;
   }
 
-  .nav-btn.active { color: var(--accent); }
-  .nav-ico { font-size: 1.15rem; }
+  .nav-btn.active {
+    color: var(--accent);
+  }
+
+  .nav-ico {
+    font-size: 1.15rem;
+  }
 
   .nav-badge {
     position: absolute;

@@ -356,29 +356,25 @@ async function renderSettingsPanels() {
 
     <div class="settings-group">
       <h4>📁 Cartella MemoBam (ChromeOS / Desktop)</h4>
-      <p>${
-        folderSupported
-          ? connected
-            ? `Collegata in sola lettura a <strong>${escapeHtml(storage.folderName)}</strong>.`
-            : 'Collega in sola lettura la cartella MemoBam (es. Google Drive / OneDrive su ChromeOS) per leggere <code>archivio_memobam.json</code> e <code>Diario/diario_index.json</code>.'
-          : 'Su questo browser mobile usa l\'importazione dei file JSON qui sotto.'
-      }</p>
+      <p>${folderSupported
+      ? connected
+        ? `Collegata in sola lettura a <strong>${escapeHtml(storage.folderName)}</strong>.`
+        : 'Collega in sola lettura la cartella MemoBam (es. Google Drive / OneDrive su ChromeOS) per leggere <code>archivio_memobam.json</code> e <code>Diario/diario_index.json</code>.'
+      : 'Su questo browser mobile usa l\'importazione dei file JSON qui sotto.'
+    }</p>
       <div class="settings-actions">
-        ${
-          folderSupported
-            ? `<button class="btn btn-primary js-connect-folder" type="button">📁 ${connected ? 'Cambia Cartella' : 'Collega Cartella'}</button>`
-            : ''
-        }
-        ${
-          folderSupported && !connected && hasSaved
-            ? `<button class="btn btn-secondary js-reconnect-folder" type="button">🔄 Riconnetti ultima cartella</button>`
-            : ''
-        }
-        ${
-          connected
-            ? `<button class="btn btn-danger js-disconnect-folder" type="button">Scollega</button>`
-            : ''
-        }
+        ${folderSupported
+      ? `<button class="btn btn-primary js-connect-folder" type="button">📁 ${connected ? 'Cambia Cartella' : 'Collega Cartella'}</button>`
+      : ''
+    }
+        ${folderSupported && !connected && hasSaved
+      ? `<button class="btn btn-secondary js-reconnect-folder" type="button">🔄 Riconnetti ultima cartella</button>`
+      : ''
+    }
+        ${connected
+      ? `<button class="btn btn-danger js-disconnect-folder" type="button">Scollega</button>`
+      : ''
+    }
       </div>
     </div>
 
@@ -590,7 +586,7 @@ async function bootstrap() {
   await renderSettingsPanels();
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => { });
   }
 }
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -13,6 +14,7 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="stylesheet" href="./css/styles.css">
 </head>
+
 <body>
   <div class="app-shell">
     <!-- Top Header -->
@@ -32,12 +34,14 @@
         <div class="search-box">
           <span class="search-icon" aria-hidden="true">🔍</span>
           <input id="searchInput" type="search" placeholder="Cerca titolo, file, note, diario..." autocomplete="off">
-          <button id="clearSearchBtn" class="icon-btn hidden" title="Pulisci ricerca" aria-label="Pulisci ricerca">✕</button>
+          <button id="clearSearchBtn" class="icon-btn hidden" title="Pulisci ricerca"
+            aria-label="Pulisci ricerca">✕</button>
         </div>
 
         <div class="date-filter-box">
           <input id="dateFilterInput" type="date" title="Filtra per giorno">
-          <button id="clearDateBtn" class="icon-btn hidden" title="Mostra tutte le date" aria-label="Mostra tutte le date">✕</button>
+          <button id="clearDateBtn" class="icon-btn hidden" title="Mostra tutte le date"
+            aria-label="Mostra tutte le date">✕</button>
         </div>
 
         <label class="toggle-chip desktop-only" title="Mostra solo gli elementi ancora da terminare">
@@ -45,7 +49,8 @@
           <span>Solo in sospeso</span>
         </label>
 
-        <button id="connectFolderBtn" class="btn btn-secondary desktop-only" title="Collega cartella MemoBam in sola lettura (ChromeOS / Desktop)">
+        <button id="connectFolderBtn" class="btn btn-secondary desktop-only"
+          title="Collega cartella MemoBam in sola lettura (ChromeOS / Desktop)">
           📁 <span id="connectFolderLabel">Collega Cartella</span>
         </button>
 
@@ -53,11 +58,13 @@
           📲 Installa
         </button>
 
-        <button id="themeToggleBtn" class="icon-btn theme-btn" title="Cambia tema Chiaro/Scuro" aria-label="Cambia tema">
+        <button id="themeToggleBtn" class="icon-btn theme-btn" title="Cambia tema Chiaro/Scuro"
+          aria-label="Cambia tema">
           🌙
         </button>
 
-        <button id="settingsOpenBtn" class="icon-btn desktop-only" title="Carica dati JSON / Impostazioni" aria-label="Carica dati e impostazioni">
+        <button id="settingsOpenBtn" class="icon-btn desktop-only" title="Carica dati JSON / Impostazioni"
+          aria-label="Carica dati e impostazioni">
           ⚙️
         </button>
       </div>
@@ -143,7 +150,8 @@
   </div>
 
   <!-- Settings / Import Modal (Desktop / ChromeOS) -->
-  <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+  <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+    aria-labelledby="settingsModalTitle">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="settingsModalTitle">⚙️ Carica Dati (Sola Lettura)</h3>
@@ -158,4 +166,5 @@
 
   <script type="module" src="./js/app.js"></script>
 </body>
+
 </html>

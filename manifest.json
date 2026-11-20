@@ -10,7 +10,10 @@
   "background_color": "#0F172A",
   "theme_color": "#4F46E5",
   "lang": "it",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./icons/icon-192.png",
@@ -43,14 +46,24 @@
       "short_name": "Archivio",
       "description": "Consulta l'archivio documenti in sola lettura",
       "url": "./index.html?tab=archive",
-      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Diario Giornaliero",
       "short_name": "Diario",
       "description": "Consulta le voci del diario",
       "url": "./index.html?tab=diary",
-      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
