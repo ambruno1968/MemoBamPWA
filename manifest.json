@@ -1,14 +1,14 @@
 {
-  "id": "memobam-pwa-readonly",
-  "name": "MemoBam — Sola Lettura",
+  "id": "memobam-pwa",
+  "name": "MemoBam — Archivio Lavori & Diario",
   "short_name": "MemoBam",
-  "description": "Consultazione in sola lettura di Archivio e Diario MemoBam su Smartphone e ChromeOS.",
+  "description": "Archivio Documenti Drag & Drop e Diario Giornaliero MemoBam su PC, ChromeOS e Smartphone.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0F172A",
-  "theme_color": "#4F46E5",
+  "theme_color": "#0F172A",
   "lang": "it",
   "categories": [
     "productivity",
@@ -44,7 +44,7 @@
     {
       "name": "Archivio Documenti",
       "short_name": "Archivio",
-      "description": "Consulta l'archivio documenti in sola lettura",
+      "description": "Apri l'archivio documenti",
       "url": "./index.html?tab=archive",
       "icons": [
         {
@@ -56,7 +56,7 @@
     {
       "name": "Diario Giornaliero",
       "short_name": "Diario",
-      "description": "Consulta le voci del diario",
+      "description": "Apri il diario giornaliero",
       "url": "./index.html?tab=diary",
       "icons": [
         {

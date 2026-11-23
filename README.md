@@ -1,20 +1,17 @@
-# MemoBam PWA — Sola Lettura (Mobile & ChromeOS)
+# MemoBam PWA
 
-Applicazione **PWA in sola lettura** parallela a **MemoBam Desktop**, pensata per consultare da **Smartphone** e **ChromeOS** l'Archivio Documenti e il Diario Giornaliero.
+Applicazione **PWA completa** allineata a **MemoBam Desktop (v1.5.0)** per gestire **Archivio Documenti** e **Diario Giornaliero** su **PC**, **ChromeOS** e **Smartphone**.
 
-## Caratteristiche
+## Caratteristiche principali
 
-- **Sola Lettura**: nessuna modifica, eliminazione o upload da telefono/ChromeOS.
-- **Allegati solo indicati**: i nomi dei file e i percorsi relativi su PC vengono mostrati a scopo informativo, senza tentare aperture/download locali (poiché i file fisici risiedono sul PC).
-- **Consultazione completa**:
-  - Ricerca istantanea per titolo, nome file, note, testo diario, data e ora.
-  - Filtro per giorno tramite calendario e filtro **"Solo in sospeso"** (`Da terminare`).
-  - Toggle **"Escludi allegati diario"** nell'archivio.
-  - Banner **"Da terminare"** con salto rapido alla scheda.
-  - Tema **Chiaro / Scuro**.
+- **Archivio Documenti Drag & Drop**: trascinamento o selezione di file con titolo personalizzato e note opzionali, data (`dd/MM/yyyy`) e ora (`HH:mm:ss`) automatiche, apertura file, modifica titolo/note ed eliminazione con conferma.
+- **Diario Giornaliero**: selezione automatica del giorno odierno, pulsanti `Oggi` / `Tutti i giorni`, ricerca multi-giorno, toolbar di formattazione (`B`, `I`, `• Elenco`, `☑ Spunta` secondaria non ripetibile sulla stessa riga), finestra di dettaglio (`Apri`), allegati in bozza e su righe esistenti (con drag & drop diretto sulla riga), colori pastello alternati.
+- **Spunta "Fatto" e Banner "Da terminare"**: casella `Fatto` su ogni scheda e riga del diario, evidenziazione in ambra per gli elementi in sospeso e barra di avviso in alto con elenco espandibile e pulsanti rapidi **Apri** e **✓ Fatto**.
+- **Filtro allegati Diario in Archivio**: spunta **`Escludi allegati provenienti dal Diario`** attiva di default.
+- **Tema Chiaro / Scuro** (`🌙 Scuro` / `☀️ Chiaro`) e filigrana **MemoBam** sullo sfondo.
 - **Origine Dati**:
-  - **Importa JSON**: carica `archivio_memobam.json` e `diario_index.json` nella cache offline locale (`IndexedDB`).
-  - **Collega Cartella (ChromeOS / Desktop Chrome)**: collega in **sola lettura** la cartella sincronizzata `MemoBam`.
+  - **Collega Cartella (ChromeOS / Desktop Chrome / Edge)**: lettura e scrittura diretta nella cartella `MemoBam` (`archivio_memobam.json`, sottocartelle `YYYY-MM`, `Diario/diario_index.json`, `Diario/Allegati/YYYY-MM-DD`, `Diario/Diario_YYYY-MM-DD.md`).
+  - **Archiviazione Offline Locale (IndexedDB)**: salvataggio completo di schede, diario e file su smartphone e browser senza File System Access API, con Importa/Esporta JSON.
 
 ## Avvio in locale (porta dedicata `5187`)
 
@@ -23,14 +20,8 @@ cd d:\Repository\MemoBam-PWA
 .\start-pwa.ps1
 ```
 
-Oppure direttamente:
-
-```powershell
-python -m http.server 5187
-```
-
 Apri `http://localhost:5187` nel browser.
 
-## Pubblicazione & Installazione
+## Pubblicazione
 
-Pubblica su **GitHub Pages** dal repository `https://github.com/ambruno1968/MemoBamPWA` (branch `main`, root `/`) per ottenere l'URL HTTPS e installare la PWA su **Android**, **iOS** e **ChromeOS**.
+Pubblicata su **GitHub Pages** dal repository `https://github.com/ambruno1968/MemoBamPWA` (branch `main`, root `/`).

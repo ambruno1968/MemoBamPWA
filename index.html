@@ -4,11 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#4F46E5">
+  <meta name="theme-color" content="#0F172A">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MemoBam">
-  <title>MemoBam — Sola Lettura</title>
+  <title>MemoBam — Archivio Lavori &amp; Diario</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -17,129 +17,214 @@
 
 <body>
   <div class="app-shell">
-    <!-- Top Header -->
+    <!-- Top Header (matching MemoBam Desktop) -->
     <header class="topbar">
       <div class="topbar-brand">
         <img src="./icons/icon.svg" alt="MemoBam" class="brand-icon">
-        <div>
+        <div class="brand-text-group">
           <div class="brand-title-row">
             <h1 class="brand-title">MemoBam</h1>
-            <span class="readonly-pill" title="Applicazione in sola lettura">SOLA LETTURA</span>
+            <span class="version-label">v1.5.0</span>
+            <span class="brand-subtitle desktop-only">• Archivio Lavori &amp; Diario</span>
           </div>
-          <span id="storageBadge" class="storage-badge" title="Origine dati attiva">Cache Locale</span>
+          <span id="storageBadge" class="storage-badge" title="Origine dati attiva">Cache Locale (Offline)</span>
         </div>
       </div>
 
       <div class="topbar-controls">
-        <div class="search-box">
-          <span class="search-icon" aria-hidden="true">🔍</span>
-          <input id="searchInput" type="search" placeholder="Cerca titolo, file, note, diario..." autocomplete="off">
-          <button id="clearSearchBtn" class="icon-btn hidden" title="Pulisci ricerca"
-            aria-label="Pulisci ricerca">✕</button>
-        </div>
+        <span class="credit-pill desktop-only" title="MemoBam di Bruno Astemio">by Bruno Astemio</span>
 
-        <div class="date-filter-box">
-          <input id="dateFilterInput" type="date" title="Filtra per giorno">
-          <button id="clearDateBtn" class="icon-btn hidden" title="Mostra tutte le date"
-            aria-label="Mostra tutte le date">✕</button>
-        </div>
+        <span id="totalCountBadge" class="total-count-pill">0 schede</span>
 
-        <label class="toggle-chip desktop-only" title="Mostra solo gli elementi ancora da terminare">
-          <input id="onlyPendingChk" type="checkbox">
-          <span>Solo in sospeso</span>
-        </label>
-
-        <button id="connectFolderBtn" class="btn btn-secondary desktop-only"
-          title="Collega cartella MemoBam in sola lettura (ChromeOS / Desktop)">
-          📁 <span id="connectFolderLabel">Collega Cartella</span>
+        <button id="connectFolderBtn" class="btn btn-topbar desktop-only"
+          title="Collega la cartella principale MemoBam (lettura e scrittura)">
+          📁 <span id="connectFolderLabel">Cartella</span>
         </button>
 
         <button id="installBtn" class="btn btn-primary hidden" title="Installa come App">
           📲 Installa
         </button>
 
-        <button id="themeToggleBtn" class="icon-btn theme-btn" title="Cambia tema Chiaro/Scuro"
+        <button id="themeToggleBtn" class="btn btn-topbar" title="Passa tra tema chiaro e tema scuro"
           aria-label="Cambia tema">
-          🌙
+          🌙 Scuro
         </button>
 
-        <button id="settingsOpenBtn" class="icon-btn desktop-only" title="Carica dati JSON / Impostazioni"
-          aria-label="Carica dati e impostazioni">
-          ⚙️
+        <button id="settingsOpenBtn" class="btn btn-topbar desktop-only" title="Cartella, Importa/Esporta JSON e Opzioni"
+          aria-label="Impostazioni e dati">
+          ⚙️ Dati
         </button>
       </div>
     </header>
 
-    <!-- Pending Alerts Banner ("Da terminare") -->
+    <!-- Top Alert for Unchecked ("Da terminare") Items -->
     <section id="pendingBanner" class="pending-banner hidden" aria-live="polite">
       <div class="pending-header">
-        <button id="pendingToggleBtn" class="pending-toggle" type="button">
-          <span class="pending-dot"></span>
-          <strong>Da terminare: <span id="pendingCount">0</span></strong>
-          <span id="pendingChevron" class="chevron">▾</span>
+        <span id="pendingSummaryText" class="pending-summary">⚠️ Hai 0 elementi non spuntati da terminare</span>
+        <button id="pendingToggleBtn" class="pending-toggle-btn" type="button">
+          <span id="pendingToggleLabel">Visualizza elenco ▾</span>
         </button>
       </div>
-      <div id="pendingList" class="pending-list"></div>
+      <div id="pendingList" class="pending-list collapsed"></div>
     </section>
 
-    <!-- Main Workspace (Split on ChromeOS/Tablet, Tabbed on Mobile) -->
-    <main class="workspace">
-      <!-- ARCHIVE PANE (READ-ONLY) -->
-      <section id="archivePane" class="pane active" data-pane="archive">
-        <div class="pane-header">
-          <div class="pane-title-group">
-            <h2>📦 Archivio Documenti</h2>
-            <span id="archiveCountBadge" class="count-pill">0</span>
+    <!-- Main Content Area (with subtle diagonal watermark like PC) -->
+    <main class="workspace-wrapper">
+      <div class="watermark-bg" aria-hidden="true">
+        <img src="./icons/icon.svg" alt="">
+        <span>MemoBam</span>
+      </div>
+
+      <div class="workspace">
+        <!-- LEFT PANEL: Archivia documento (Drop Zone & Quick Metadata) -->
+        <aside id="dropPane" class="pane drop-pane" data-pane="drop">
+          <div class="drop-pane-inner">
+            <h2 class="panel-heading">Archivia documento</h2>
+
+            <div class="meta-fields">
+              <label class="field-label">
+                <span>Titolo personalizzato (opzionale)</span>
+                <input id="customTitleInput" type="text" class="field-input"
+                  placeholder="Se lasciato vuoto, usa il nome del file" autocomplete="off">
+              </label>
+
+              <label class="field-label">
+                <span>Note lavoro (opzionale)</span>
+                <textarea id="customNotesInput" class="field-input notes-textarea" rows="2"
+                  placeholder="Note opzionali..."></textarea>
+              </label>
+            </div>
+
+            <!-- Drag & Drop Zone -->
+            <div id="dropZone" class="drop-zone" tabindex="0" role="button"
+              aria-label="Trascina qui i documenti o clicca Sfoglia file">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">📥</div>
+                <div id="dropZoneTitle" class="drop-title">Trascina qui i documenti</div>
+                <div class="drop-sub">da Scrivania o Esplora File</div>
+                <button id="browseFilesBtn" type="button" class="btn btn-primary btn-sm">Sfoglia file...</button>
+                <input id="fileInput" type="file" multiple class="hidden">
+              </div>
+            </div>
+
+            <!-- Folder / Storage Path Info -->
+            <div class="path-row">
+              <span id="fixedPathText" class="path-text" title="Origine dati attiva">Percorso: Cache Locale</span>
+              <button id="changePathBtn" type="button" class="btn btn-xs btn-neutral"
+                title="Scegli cartella o gestisci dati">Cambia...</button>
+            </div>
+
+            <!-- Status Banner -->
+            <div id="statusBanner" class="status-banner hidden" role="status" aria-live="polite"></div>
           </div>
-          <label class="toggle-chip" title="Nascondi gli allegati del diario dall'archivio">
-            <input id="excludeDiaryAttachmentsChk" type="checkbox">
-            <span>Escludi allegati diario</span>
-          </label>
-        </div>
+        </aside>
 
-        <div id="archiveList" class="card-list"></div>
-      </section>
-
-      <!-- DIARY PANE (READ-ONLY) -->
-      <section id="diaryPane" class="pane" data-pane="diary">
-        <div class="pane-header">
-          <div class="pane-title-group">
-            <h2>📓 Diario Giornaliero</h2>
-            <span id="diaryCountBadge" class="count-pill">0</span>
+        <!-- RIGHT PANEL: Tabs for Archive & Daily Diary -->
+        <section id="mainRightPane" class="right-pane">
+          <!-- Section Switcher (Desktop) -->
+          <div class="section-tabs desktop-only">
+            <button id="archiveTabBtn" class="section-tab active" type="button" data-section="archive">
+              📁 Archivio Documenti
+            </button>
+            <button id="diaryTabBtn" class="section-tab" type="button" data-section="diary">
+              📓 Diario Giornaliero (<span id="diaryTodayCount">0</span>)
+            </button>
           </div>
-          <div class="pane-actions">
-            <label class="toggle-chip mobile-only-inline">
-              <input id="onlyPendingMobileChk" type="checkbox">
-              <span>In sospeso</span>
-            </label>
+
+          <!-- TAB 1: Archivio Documenti -->
+          <div id="archiveTabContent" class="tab-content active" data-pane="archive">
+            <div class="search-card">
+              <div class="search-row">
+                <div class="search-input-wrap">
+                  <input id="searchInput" type="search" class="field-input"
+                    placeholder="Cerca titolo, data (20/11/2026) o ora..." autocomplete="off">
+                </div>
+                <input id="dateFilterInput" type="date" class="field-input date-input" title="Filtra per data specifica">
+                <button id="clearSearchBtn" type="button" class="btn btn-neutral btn-sm">Pulisci</button>
+              </div>
+              <label class="checkbox-inline"
+                title="Se attivo, nasconde in Archivio Documenti gli allegati collegati alle righe del Diario">
+                <input id="excludeDiaryAttachmentsChk" type="checkbox" checked>
+                <span>Escludi allegati provenienti dal Diario</span>
+              </label>
+            </div>
+
+            <div id="archiveSummaryText" class="results-summary">0 schede trovate</div>
+
+            <div id="archiveList" class="card-list"></div>
           </div>
-        </div>
 
-        <div id="diaryList" class="card-list"></div>
-      </section>
+          <!-- TAB 2: Diario Giornaliero -->
+          <div id="diaryTabContent" class="tab-content" data-pane="diary">
+            <!-- Diary Controls: Date + Today + All Days + Search -->
+            <div class="diary-controls-card">
+              <input id="diaryDateInput" type="date" class="field-input date-input" title="Giorno del diario">
+              <button id="diaryTodayBtn" type="button" class="btn btn-soft-blue btn-sm">Oggi</button>
+              <button id="diaryAllDaysBtn" type="button" class="btn btn-neutral btn-sm">Tutti i giorni</button>
+              <div class="diary-search-wrap">
+                <input id="diarySearchInput" type="search" class="field-input"
+                  placeholder="Cerca nel diario (testo, data o ora)..." autocomplete="off">
+              </div>
+            </div>
 
-      <!-- MOBILE DATA / SETTINGS PANE -->
-      <section id="settingsPane" class="pane mobile-only-pane" data-pane="settings">
-        <div class="pane-header">
-          <h2>⚙️ Carica Dati & Opzioni</h2>
-        </div>
-        <div id="settingsContentMobile" class="settings-stack"></div>
-      </section>
+            <!-- Quick Record Input with Formatting Toolbar -->
+            <div class="diary-composer">
+              <div class="composer-toolbar">
+                <button id="fmtBoldBtn" type="button" class="fmt-btn fmt-bold" title="Grassetto (Ctrl+B)">B</button>
+                <button id="fmtItalicBtn" type="button" class="fmt-btn fmt-italic" title="Corsivo (Ctrl+I)">I</button>
+                <button id="fmtBulletBtn" type="button" class="fmt-btn" title="Elenco puntato">• Elenco</button>
+                <button id="fmtCheckBtn" type="button" class="fmt-btn"
+                  title="Inserisci una casella di spunta secondaria">☑ Spunta</button>
+                <button id="draftAttachBtn" type="button" class="fmt-btn"
+                  title="Allega file alla nota in stesura">📎 Allega</button>
+                <input id="draftAttachInput" type="file" multiple class="hidden">
+              </div>
+
+              <div class="composer-row">
+                <div id="diaryEditor" class="rich-editor" contenteditable="true"
+                  data-placeholder="Scrivi una nuova nota del diario..."></div>
+                <button id="saveDiaryBtn" type="button" class="btn btn-primary save-diary-btn">💾 Salva</button>
+              </div>
+
+              <!-- Staged Draft Attachments -->
+              <div id="draftAttachmentsPanel" class="draft-attachments hidden">
+                <div class="draft-attachments-title">
+                  Allegati collegati a questa nota (verranno salvati con 💾 Salva):
+                </div>
+                <div id="draftAttachmentsList" class="attach-chips"></div>
+              </div>
+            </div>
+
+            <div id="diarySummaryText" class="results-summary">0 attività registrate</div>
+
+            <div id="diaryList" class="card-list"></div>
+          </div>
+
+          <!-- MOBILE SETTINGS PANE -->
+          <div id="settingsPane" class="tab-content mobile-only-pane" data-pane="settings">
+            <div id="settingsContentMobile" class="settings-stack"></div>
+          </div>
+        </section>
+      </div>
     </main>
 
     <!-- Mobile Bottom Navigation -->
     <nav class="bottom-nav" aria-label="Navigazione principale">
       <button class="nav-btn active" data-tab="archive" type="button">
-        <span class="nav-ico">📦</span>
+        <span class="nav-ico">📁</span>
         <span>Archivio</span>
       </button>
       <button class="nav-btn" data-tab="diary" type="button">
         <span class="nav-ico">📓</span>
         <span>Diario</span>
       </button>
+      <button class="nav-btn" data-tab="drop" type="button">
+        <span class="nav-ico">📥</span>
+        <span>Archivia</span>
+      </button>
       <button class="nav-btn" data-tab="pending" type="button">
         <span class="nav-ico">⏳</span>
-        <span>In sospeso</span>
+        <span>Sospesi</span>
         <span id="navPendingBadge" class="nav-badge hidden">0</span>
       </button>
       <button class="nav-btn" data-tab="settings" type="button">
@@ -149,17 +234,86 @@
     </nav>
   </div>
 
-  <!-- Settings / Import Modal (Desktop / ChromeOS) -->
+  <!-- Edit Archive Item Modal (matching EditItemWindow) -->
+  <div id="editItemModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+    aria-labelledby="editItemModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="editItemModalTitle">✏️ Modifica Scheda</h3>
+        <button id="closeEditItemModalBtn" class="icon-btn" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">
+          <span>Titolo scheda</span>
+          <input id="editItemTitleInput" type="text" class="field-input" autocomplete="off">
+        </label>
+        <label class="field-label">
+          <span>Note</span>
+          <textarea id="editItemNotesInput" class="field-input" rows="4"></textarea>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelEditItemBtn" type="button" class="btn btn-neutral">Annulla</button>
+        <button id="saveEditItemBtn" type="button" class="btn btn-primary">💾 Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diary Detail Modal (matching DiaryDetailWindow) -->
+  <div id="diaryDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+    aria-labelledby="diaryDetailModalTitle">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div class="detail-header-info">
+          <h3 id="diaryDetailModalTitle">📓 Dettaglio Nota Diario</h3>
+          <span id="detailTimestampText" class="detail-timestamp"></span>
+        </div>
+        <button id="closeDiaryDetailModalBtn" class="icon-btn" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="checkbox-inline">
+          <input id="detailDoneChk" type="checkbox">
+          <span><strong>Fatto</strong> (togli la spunta per ricordarti di completarla)</span>
+        </label>
+
+        <div class="composer-toolbar">
+          <button id="detailBoldBtn" type="button" class="fmt-btn fmt-bold" title="Grassetto">B</button>
+          <button id="detailItalicBtn" type="button" class="fmt-btn fmt-italic" title="Corsivo">I</button>
+          <button id="detailBulletBtn" type="button" class="fmt-btn" title="Elenco puntato">• Elenco</button>
+          <button id="detailCheckBtn" type="button" class="fmt-btn"
+            title="Inserisci una casella di spunta secondaria">☑ Spunta</button>
+          <button id="detailAttachBtn" type="button" class="fmt-btn" title="Allega file">📎 Allega</button>
+          <input id="detailAttachInput" type="file" multiple class="hidden">
+        </div>
+
+        <div id="detailEditor" class="rich-editor rich-editor-lg" contenteditable="true"></div>
+
+        <div id="detailAttachmentsSection" class="detail-attachments hidden">
+          <div class="detail-attachments-title">Allegati collegati:</div>
+          <div id="detailAttachmentsList" class="attach-chips"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelDiaryDetailBtn" type="button" class="btn btn-neutral">Chiudi</button>
+        <button id="saveDiaryDetailBtn" type="button" class="btn btn-primary">💾 Salva modifiche</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings / Import & Export Modal -->
   <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
     aria-labelledby="settingsModalTitle">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 id="settingsModalTitle">⚙️ Carica Dati (Sola Lettura)</h3>
-        <button id="closeSettingsModalBtn" class="icon-btn" aria-label="Chiudi">✕</button>
+        <h3 id="settingsModalTitle">⚙️ Cartella, Importazione &amp; Backup</h3>
+        <button id="closeSettingsModalBtn" class="icon-btn" type="button" aria-label="Chiudi">✕</button>
       </div>
       <div id="settingsContentModal" class="modal-body settings-stack"></div>
     </div>
   </div>
+
+  <!-- Hidden file input for attaching files to an existing diary entry -->
+  <input id="entryAttachInput" type="file" multiple class="hidden">
 
   <!-- Toast Notification -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
