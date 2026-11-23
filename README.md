@@ -1,6 +1,6 @@
 # MemoBam PWA
 
-Applicazione **PWA completa** allineata a **MemoBam Desktop (v1.5.0)** per gestire **Archivio Documenti** e **Diario Giornaliero** su **PC**, **ChromeOS** e **Smartphone**.
+Applicazione **PWA completa** (**v1.6.0**) per gestire **Archivio Documenti** e **Diario Giornaliero** su **PC**, **ChromeOS** e **Smartphone**.
 
 ## Caratteristiche principali
 

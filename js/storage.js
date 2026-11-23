@@ -7,12 +7,13 @@
 // 3. JSON Import & Export (archivio_memobam.json, diario_index.json, or combined backup)
 
 const DB_NAME = 'memobam_pwa_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const LEGACY_RO_DB_NAME = 'memobam_pwa_readonly_db';
 const ARCHIVE_INDEX_FILE = 'archivio_memobam.json';
 const DIARY_DIR = 'Diario';
 const ATTACHMENTS_DIR = 'Allegati';
 const DIARY_INDEX_FILE = 'diario_index.json';
+const QUICK_NOTES_FILE = 'note_pronte.json';
 
 function generateId() {
   if (crypto?.randomUUID) {
@@ -76,6 +77,7 @@ function openDb() {
       const db = req.result;
       if (!db.objectStoreNames.contains('archive')) db.createObjectStore('archive', { keyPath: 'Id' });
       if (!db.objectStoreNames.contains('diary')) db.createObjectStore('diary', { keyPath: 'Id' });
+      if (!db.objectStoreNames.contains('quickNotes')) db.createObjectStore('quickNotes', { keyPath: 'Id' });
       if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'path' });
       if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
     };
@@ -699,6 +701,85 @@ export class MemoBamStorage {
         await idbTx(this.db, 'files', 'readwrite', (s) => s.delete(idbKey));
       }
       await idbTx(this.db, 'diary', 'readwrite', (s) => s.delete(entryId));
+    }
+  }
+
+  // ===== QUICK NOTES ("Note Pronte") =====
+
+  async getQuickNotes() {
+    if (this.dirHandle) {
+      try {
+        const diaryDir = await this.dirHandle.getDirectoryHandle(DIARY_DIR, { create: this.folderWritable });
+        const notes = await this._readJsonFile(diaryDir, QUICK_NOTES_FILE, null);
+        if (Array.isArray(notes)) {
+          return notes.sort((a, b) => new Date(a.CreatedAt) - new Date(b.CreatedAt));
+        }
+        if (this.folderWritable) {
+          const seeded = [{ Id: generateId(), Text: 'Listino cavi aggiornato', CreatedAt: toLocalIsoString(new Date()) }];
+          await this._writeTextFile(diaryDir, QUICK_NOTES_FILE, JSON.stringify(seeded, null, 2));
+          return seeded;
+        }
+        return [];
+      } catch {
+        return [];
+      }
+    }
+
+    const seededFlag = await idbTx(this.db, 'settings', 'readonly', (s) => s.get('quickNotesSeeded'));
+    const notes = await idbTx(this.db, 'quickNotes', 'readonly', (s) => s.getAll());
+    if ((!notes || notes.length === 0) && !seededFlag?.value) {
+      const seed = { Id: generateId(), Text: 'Listino cavi aggiornato', CreatedAt: toLocalIsoString(new Date()) };
+      await idbTx(this.db, 'quickNotes', 'readwrite', (s) => s.put(seed));
+      await idbTx(this.db, 'settings', 'readwrite', (s) => s.put({ key: 'quickNotesSeeded', value: true }));
+      return [seed];
+    }
+    return (notes || []).sort((a, b) => new Date(a.CreatedAt) - new Date(b.CreatedAt));
+  }
+
+  async addQuickNote(text) {
+    const note = {
+      Id: generateId(),
+      Text: (text || '').trim(),
+      CreatedAt: toLocalIsoString(new Date())
+    };
+    if (this.dirHandle) {
+      if (!this.folderWritable) throw new Error('Cartella collegata in sola lettura.');
+      const diaryDir = await this._getOrCreateSubDir(this.dirHandle, [DIARY_DIR]);
+      const notes = await this.getQuickNotes();
+      notes.push(note);
+      await this._writeTextFile(diaryDir, QUICK_NOTES_FILE, JSON.stringify(notes, null, 2));
+    } else {
+      await idbTx(this.db, 'quickNotes', 'readwrite', (s) => s.put(note));
+      await idbTx(this.db, 'settings', 'readwrite', (s) => s.put({ key: 'quickNotesSeeded', value: true }));
+    }
+    return note;
+  }
+
+  async updateQuickNote(id, text) {
+    if (this.dirHandle) {
+      if (!this.folderWritable) throw new Error('Cartella collegata in sola lettura.');
+      const diaryDir = await this._getOrCreateSubDir(this.dirHandle, [DIARY_DIR]);
+      const notes = await this.getQuickNotes();
+      const target = notes.find((n) => n.Id === id);
+      if (!target) return;
+      target.Text = (text || '').trim();
+      await this._writeTextFile(diaryDir, QUICK_NOTES_FILE, JSON.stringify(notes, null, 2));
+    } else {
+      const target = await idbTx(this.db, 'quickNotes', 'readonly', (s) => s.get(id));
+      if (!target) return;
+      target.Text = (text || '').trim();
+      await idbTx(this.db, 'quickNotes', 'readwrite', (s) => s.put(target));
+    }
+  }
+
+  async deleteQuickNote(id) {
+    if (this.dirHandle) {
+      if (!this.folderWritable) throw new Error('Cartella collegata in sola lettura.');
+      const diaryDir = await this._getOrCreateSubDir(this.dirHandle, [DIARY_DIR]);
+      const notes = (await this.getQuickNotes()).filter((n) => n.Id !== id);
+      await this._writeTextFile(diaryDir, QUICK_NOTES_FILE, JSON.stringify(notes, null, 2));
+    } else {
+      await idbTx(this.db, 'quickNotes', 'readwrite', (s) => s.delete(id));
     }
   }
 

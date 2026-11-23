@@ -27,17 +27,20 @@ function getTodayDateStr() {
 const state = {
   archive: [],
   diary: [],
+  quickNotes: [],
   activeSection: 'archive',
-  search: '',
-  dateFilter: '',
+  globalSearch: '',
+  globalDateFilter: '',
   excludeDiaryAttachments: localStorage.getItem('memobam_exclude_diary_att') !== 'false',
   diaryDateFilter: getTodayDateStr(),
-  diarySearch: '',
   pendingExpanded: false,
   draftAttachments: [], // File[]
   editingArchiveId: null,
+  editingQuickNoteId: null,
   detailDiaryId: null,
   pendingAttachEntryId: null,
+  lastArchiveCount: 0,
+  lastDiaryCount: 0,
   deferredInstallPrompt: null
 };
 
@@ -49,6 +52,13 @@ const els = {
   installBtn: document.getElementById('installBtn'),
   themeToggleBtn: document.getElementById('themeToggleBtn'),
   settingsOpenBtn: document.getElementById('settingsOpenBtn'),
+
+  globalSearchInput: document.getElementById('globalSearchInput'),
+  globalDateInput: document.getElementById('globalDateInput'),
+  clearGlobalSearchBtn: document.getElementById('clearGlobalSearchBtn'),
+  globalSearchCounts: document.getElementById('globalSearchCounts'),
+  globalArchiveCountBtn: document.getElementById('globalArchiveCountBtn'),
+  globalDiaryCountBtn: document.getElementById('globalDiaryCountBtn'),
 
   pendingBanner: document.getElementById('pendingBanner'),
   pendingSummaryText: document.getElementById('pendingSummaryText'),
@@ -75,9 +85,6 @@ const els = {
   diaryTabContent: document.getElementById('diaryTabContent'),
   settingsPane: document.getElementById('settingsPane'),
 
-  searchInput: document.getElementById('searchInput'),
-  dateFilterInput: document.getElementById('dateFilterInput'),
-  clearSearchBtn: document.getElementById('clearSearchBtn'),
   excludeDiaryAttachmentsChk: document.getElementById('excludeDiaryAttachmentsChk'),
   archiveSummaryText: document.getElementById('archiveSummaryText'),
   archiveList: document.getElementById('archiveList'),
@@ -85,7 +92,8 @@ const els = {
   diaryDateInput: document.getElementById('diaryDateInput'),
   diaryTodayBtn: document.getElementById('diaryTodayBtn'),
   diaryAllDaysBtn: document.getElementById('diaryAllDaysBtn'),
-  diarySearchInput: document.getElementById('diarySearchInput'),
+  quickNotesChips: document.getElementById('quickNotesChips'),
+  manageQuickNotesBtn: document.getElementById('manageQuickNotesBtn'),
   fmtBoldBtn: document.getElementById('fmtBoldBtn'),
   fmtItalicBtn: document.getElementById('fmtItalicBtn'),
   fmtBulletBtn: document.getElementById('fmtBulletBtn'),
@@ -126,6 +134,23 @@ const els = {
   closeSettingsModalBtn: document.getElementById('closeSettingsModalBtn'),
   settingsContentModal: document.getElementById('settingsContentModal'),
   settingsContentMobile: document.getElementById('settingsContentMobile'),
+
+  quickNotesModal: document.getElementById('quickNotesModal'),
+  closeQuickNotesModalBtn: document.getElementById('closeQuickNotesModalBtn'),
+  closeQuickNotesFooterBtn: document.getElementById('closeQuickNotesFooterBtn'),
+  quickNoteInput: document.getElementById('quickNoteInput'),
+  saveQuickNoteBtn: document.getElementById('saveQuickNoteBtn'),
+  cancelQuickNoteEditBtn: document.getElementById('cancelQuickNoteEditBtn'),
+  quickNotesTableBody: document.getElementById('quickNotesTableBody'),
+
+  globalSearchPopup: document.getElementById('globalSearchPopup'),
+  globalSearchPopupSubtitle: document.getElementById('globalSearchPopupSubtitle'),
+  closeGlobalPopupTopBtn: document.getElementById('closeGlobalPopupTopBtn'),
+  closeGlobalPopupFooterBtn: document.getElementById('closeGlobalPopupFooterBtn'),
+  popupArchiveBadge: document.getElementById('popupArchiveBadge'),
+  popupDiaryBadge: document.getElementById('popupDiaryBadge'),
+  popupArchiveList: document.getElementById('popupArchiveList'),
+  popupDiaryList: document.getElementById('popupDiaryList'),
 
   entryAttachInput: document.getElementById('entryAttachInput'),
   toast: document.getElementById('toast')
@@ -265,12 +290,14 @@ function initTheme() {
 // ===== DATA LOADING & STORAGE STATUS =====
 
 async function reloadData() {
-  const [archive, diary] = await Promise.all([
+  const [archive, diary, quickNotes] = await Promise.all([
     storage.getArchiveItems(),
-    storage.getDiaryEntries()
+    storage.getDiaryEntries(),
+    storage.getQuickNotes()
   ]);
   state.archive = archive;
   state.diary = diary;
+  state.quickNotes = quickNotes;
   updateStorageBadge();
   renderAll();
 }
@@ -346,6 +373,18 @@ function renderAll() {
   renderPending();
   renderArchive();
   renderDiary();
+  renderQuickNotesChips();
+}
+
+function combineQueries(a, b) {
+  return [a, b].map((s) => (s || '').trim()).filter(Boolean).join(' ');
+}
+
+function updateGlobalSearchCounts() {
+  const active = Boolean(state.globalSearch || state.globalDateFilter);
+  els.globalSearchCounts.classList.toggle('hidden', !active);
+  els.globalArchiveCountBtn.textContent = `📁 ${state.lastArchiveCount} Archivio`;
+  els.globalDiaryCountBtn.textContent = `📓 ${state.lastDiaryCount} Diario`;
 }
 
 function renderPending() {
@@ -408,11 +447,79 @@ function renderPending() {
     .join('');
 }
 
-function renderArchive() {
-  const all = getUnifiedArchive().filter((i) => {
-    if (state.dateFilter && (i.ArchivedAt || '').slice(0, 10) !== state.dateFilter) return false;
-    return matchesTerms([i.Title, i.OriginalFileName, i.Notes, i._diarySourceLabel], i.ArchivedAt, state.search);
+function getFilteredArchiveItems() {
+  const effectiveQuery = state.globalSearch;
+  const effectiveDate = state.globalDateFilter;
+
+  return getUnifiedArchive().filter((i) => {
+    if (effectiveDate && (i.ArchivedAt || '').slice(0, 10) !== effectiveDate) return false;
+    return matchesTerms([i.Title, i.OriginalFileName, i.Notes, i._diarySourceLabel], i.ArchivedAt, effectiveQuery);
   });
+}
+
+function getFilteredDiaryEntries(ignoreDayFilterWhenGlobal = true) {
+  const effectiveQuery = state.globalSearch;
+  const effectiveDate = state.globalDateFilter || (ignoreDayFilterWhenGlobal && state.globalSearch ? '' : state.diaryDateFilter);
+
+  return state.diary.filter((e) => {
+    if (effectiveDate && (e.Timestamp || '').slice(0, 10) !== effectiveDate) return false;
+    return matchesTerms(
+      [e.Text, ...(e.Attachments || []).map((a) => a.FileName)],
+      e.Timestamp,
+      effectiveQuery
+    );
+  });
+}
+
+function renderGlobalSearchPopup(openIfActive = false) {
+  const hasFilter = Boolean(state.globalSearch || state.globalDateFilter);
+  if (!hasFilter) {
+    els.globalSearchPopup.classList.add('hidden');
+    return;
+  }
+
+  const archiveResults = getFilteredArchiveItems();
+  const diaryResults = getFilteredDiaryEntries(true);
+
+  const parts = [];
+  if (state.globalSearch) parts.push(`"${state.globalSearch}"`);
+  if (state.globalDateFilter) parts.push(`data ${formatDateInputToIt(state.globalDateFilter)}`);
+  els.globalSearchPopupSubtitle.textContent = `Filtro attivo: ${parts.join(' • ')}`;
+
+  els.popupArchiveBadge.textContent = archiveResults.length;
+  els.popupDiaryBadge.textContent = diaryResults.length;
+
+  els.popupArchiveList.innerHTML = archiveResults.length === 0
+    ? `<div class="empty-state">Nessun documento trovato</div>`
+    : archiveResults
+      .map((item) => `
+        <button type="button" class="parallel-row js-popup-archive-row ${item.IsDone ? '' : 'pending-highlight'}" data-id="${item.Id}">
+          <div class="parallel-row-title">${item._isDiaryAttachment ? '📓 ' : '📄 '}${escapeHtml(item.Title || item.OriginalFileName)}</div>
+          <div class="parallel-row-meta">📅 ${formatDateIt(item.ArchivedAt)} 🕒 ${formatTimeIt(item.ArchivedAt)} • ${escapeHtml(item.OriginalFileName)}</div>
+          ${item.Notes ? `<div class="parallel-row-sub">${escapeHtml(item.Notes)}</div>` : ''}
+        </button>`)
+      .join('');
+
+  els.popupDiaryList.innerHTML = diaryResults.length === 0
+    ? `<div class="empty-state">Nessuna nota diario trovata</div>`
+    : diaryResults
+      .map((entry) => `
+        <button type="button" class="parallel-row js-popup-diary-row ${entry.IsDone ? '' : 'pending-highlight'}" data-id="${entry.Id}">
+          <div class="parallel-row-title">${escapeHtml(entry.Text)}</div>
+          <div class="parallel-row-meta">📅 ${formatDateIt(entry.Timestamp)} 🕒 ${formatTimeIt(entry.Timestamp)}${(entry.Attachments || []).length ? ` • 📎 ${entry.Attachments.length} allegati` : ''}</div>
+        </button>`)
+      .join('');
+
+  if (openIfActive) {
+    els.globalSearchPopup.classList.remove('hidden');
+  }
+}
+
+function renderArchive() {
+  const all = getFilteredArchiveItems();
+
+  state.lastArchiveCount = all.length;
+  updateGlobalSearchCounts();
 
   const totalCount = state.archive.length;
   els.totalCountBadge.textContent = totalCount === 1 ? '1 scheda' : `${totalCount} schede`;
@@ -467,17 +574,14 @@ function renderDiary() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const palette = isDark ? DARK_PASTEL : LIGHT_PASTEL;
 
-  const filtered = state.diary.filter((e) => {
-    if (state.diaryDateFilter && (e.Timestamp || '').slice(0, 10) !== state.diaryDateFilter) return false;
-    return matchesTerms(
-      [e.Text, ...(e.Attachments || []).map((a) => a.FileName)],
-      e.Timestamp,
-      state.diarySearch
-    );
-  });
+  const effectiveDate = state.globalDateFilter || (state.globalSearch ? '' : state.diaryDateFilter);
+  const filtered = getFilteredDiaryEntries(true);
 
-  const dayLabel = state.diaryDateFilter
-    ? `del ${formatDateInputToIt(state.diaryDateFilter)}`
+  state.lastDiaryCount = filtered.length;
+  updateGlobalSearchCounts();
+
+  const dayLabel = effectiveDate
+    ? `del ${formatDateInputToIt(effectiveDate)}`
     : 'in tutti i giorni';
   els.diarySummaryText.textContent = filtered.length === 1
     ? `1 attività registrata ${dayLabel}`
@@ -538,6 +642,56 @@ function renderDraftAttachments() {
         <button class="attach-remove-btn js-remove-draft-att" data-idx="${idx}" type="button" title="Rimuovi allegato dalla bozza">✕</button>
       </span>`)
     .join('');
+}
+
+function renderQuickNotesChips() {
+  if (!state.quickNotes || state.quickNotes.length === 0) {
+    els.quickNotesChips.innerHTML = `<span style="font-size:0.74rem;color:var(--text-muted)">Nessuna nota pronta</span>`;
+    return;
+  }
+  els.quickNotesChips.innerHTML = state.quickNotes
+    .map((n) => `
+      <button type="button" class="quick-note-chip js-quick-note-chip" data-id="${n.Id}"
+        title="Clicca per inserire questa nota pronta nell'editor">${escapeHtml(n.Text)}</button>`)
+    .join('');
+}
+
+function renderQuickNotesTable() {
+  if (!state.quickNotes || state.quickNotes.length === 0) {
+    els.quickNotesTableBody.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:18px">Nessuna nota pronta salvata.</td></tr>`;
+    return;
+  }
+  els.quickNotesTableBody.innerHTML = state.quickNotes
+    .map((n) => `
+      <tr>
+        <td>${escapeHtml(n.Text)}</td>
+        <td class="col-actions">
+          <div class="table-actions-cell">
+            <button type="button" class="btn btn-xs btn-primary js-qn-use" data-id="${n.Id}" title="Inserisci nel Diario">↙️ Usa</button>
+            <button type="button" class="btn btn-xs btn-neutral js-qn-edit" data-id="${n.Id}">✏️ Modifica</button>
+            <button type="button" class="btn btn-xs btn-danger-soft js-qn-delete" data-id="${n.Id}">🗑️ Elimina</button>
+          </div>
+        </td>
+      </tr>`)
+    .join('');
+}
+
+function insertTextIntoDiaryEditor(text) {
+  if (!text) return;
+  const current = extractEditorPlainText(els.diaryEditor);
+  if (!current) {
+    els.diaryEditor.textContent = text;
+  } else {
+    els.diaryEditor.innerHTML += `<br>${escapeHtml(text)}`;
+  }
+  els.diaryEditor.focus();
+}
+
+function resetQuickNoteEditMode() {
+  state.editingQuickNoteId = null;
+  els.quickNoteInput.value = '';
+  els.saveQuickNoteBtn.textContent = '➕ Aggiungi';
+  els.cancelQuickNoteEditBtn.classList.add('hidden');
 }
 
 // ===== ACTIONS =====
@@ -750,6 +904,77 @@ function bindEvents() {
     applyTheme(curr === 'dark' ? 'light' : 'dark');
   });
 
+  // Top-level Global Search + Parallel Results Popup
+  const triggerGlobalSearch = () => {
+    renderArchive();
+    renderDiary();
+    renderGlobalSearchPopup(true);
+  };
+  els.globalSearchInput.addEventListener('input', () => {
+    state.globalSearch = els.globalSearchInput.value.trim();
+    triggerGlobalSearch();
+  });
+  els.globalDateInput.addEventListener('change', () => {
+    state.globalDateFilter = els.globalDateInput.value;
+    triggerGlobalSearch();
+  });
+  els.clearGlobalSearchBtn.addEventListener('click', () => {
+    els.globalSearchInput.value = '';
+    els.globalDateInput.value = '';
+    state.globalSearch = '';
+    state.globalDateFilter = '';
+    els.globalSearchPopup.classList.add('hidden');
+    renderArchive();
+    renderDiary();
+  });
+  els.globalArchiveCountBtn.addEventListener('click', () => {
+    renderGlobalSearchPopup(true);
+  });
+  els.globalDiaryCountBtn.addEventListener('click', () => {
+    renderGlobalSearchPopup(true);
+  });
+  els.closeGlobalPopupTopBtn.addEventListener('click', () => els.globalSearchPopup.classList.add('hidden'));
+  els.closeGlobalPopupFooterBtn.addEventListener('click', () => els.globalSearchPopup.classList.add('hidden'));
+  els.globalSearchPopup.addEventListener('click', (e) => {
+    if (e.target === els.globalSearchPopup) els.globalSearchPopup.classList.add('hidden');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !els.globalSearchPopup.classList.contains('hidden')) {
+      els.globalSearchPopup.classList.add('hidden');
+    }
+  });
+
+  // Quick Notes ("Note Pronte") Modal & Chips
+  els.manageQuickNotesBtn.addEventListener('click', () => {
+    resetQuickNoteEditMode();
+    renderQuickNotesTable();
+    els.quickNotesModal.classList.remove('hidden');
+    els.quickNoteInput.focus();
+  });
+  els.closeQuickNotesModalBtn.addEventListener('click', () => els.quickNotesModal.classList.add('hidden'));
+  els.closeQuickNotesFooterBtn.addEventListener('click', () => els.quickNotesModal.classList.add('hidden'));
+  els.cancelQuickNoteEditBtn.addEventListener('click', resetQuickNoteEditMode);
+  els.saveQuickNoteBtn.addEventListener('click', async () => {
+    const text = els.quickNoteInput.value.trim();
+    if (!text) {
+      showToast('Inserisci il testo della nota pronta.');
+      els.quickNoteInput.focus();
+      return;
+    }
+    if (state.editingQuickNoteId) {
+      await storage.updateQuickNote(state.editingQuickNoteId, text);
+      resetQuickNoteEditMode();
+      showToast('Nota pronta aggiornata');
+    } else {
+      await storage.addQuickNote(text);
+      els.quickNoteInput.value = '';
+      showToast('Nota pronta aggiunta');
+    }
+    state.quickNotes = await storage.getQuickNotes();
+    renderQuickNotesChips();
+    renderQuickNotesTable();
+  });
+
   // Drop zone
   els.browseFilesBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -781,31 +1006,15 @@ function bindEvents() {
     await handleDroppedOrSelectedFiles(e.dataTransfer?.files);
   });
 
-  // Archive search & filters
-  els.searchInput.addEventListener('input', () => {
-    state.search = els.searchInput.value.trim();
-    renderArchive();
-  });
-  els.dateFilterInput.addEventListener('change', () => {
-    state.dateFilter = els.dateFilterInput.value;
-    renderArchive();
-  });
-  els.clearSearchBtn.addEventListener('click', () => {
-    els.searchInput.value = '';
-    els.dateFilterInput.value = '';
-    state.search = '';
-    state.dateFilter = '';
-    renderArchive();
-  });
-
   els.excludeDiaryAttachmentsChk.checked = state.excludeDiaryAttachments;
   els.excludeDiaryAttachmentsChk.addEventListener('change', () => {
     state.excludeDiaryAttachments = els.excludeDiaryAttachmentsChk.checked;
     localStorage.setItem('memobam_exclude_diary_att', String(state.excludeDiaryAttachments));
     renderArchive();
+    if (!els.globalSearchPopup.classList.contains('hidden')) renderGlobalSearchPopup(false);
   });
 
-  // Diary filters & composer
+  // Diary date controls
   els.diaryDateInput.value = state.diaryDateFilter;
   els.diaryDateInput.addEventListener('change', () => {
     state.diaryDateFilter = els.diaryDateInput.value;
@@ -813,18 +1022,12 @@ function bindEvents() {
   });
   els.diaryTodayBtn.addEventListener('click', () => {
     state.diaryDateFilter = getTodayDateStr();
-    state.diarySearch = '';
     els.diaryDateInput.value = state.diaryDateFilter;
-    els.diarySearchInput.value = '';
     renderDiary();
   });
   els.diaryAllDaysBtn.addEventListener('click', () => {
     state.diaryDateFilter = '';
     els.diaryDateInput.value = '';
-    renderDiary();
-  });
-  els.diarySearchInput.addEventListener('input', () => {
-    state.diarySearch = els.diarySearchInput.value.trim();
     renderDiary();
   });
 
@@ -1006,6 +1209,35 @@ function bindEvents() {
   document.body.addEventListener('click', async (e) => {
     const target = e.target;
 
+    // Global search popup row clicks (open matching item)
+    if (target.closest('.js-popup-archive-row')) {
+      const id = target.closest('.js-popup-archive-row').dataset.id;
+      const item = getUnifiedArchive().find((i) => i.Id === id);
+      els.globalSearchPopup.classList.add('hidden');
+      if (item) {
+        switchSection('archive');
+        const card = els.archiveList.querySelector(`.item-card[data-id="${id}"]`);
+        card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await openStoredFile(item.StoredRelativePath, item.OriginalFileName, item._isDiaryAttachment);
+      }
+      return;
+    }
+    if (target.closest('.js-popup-diary-row')) {
+      const id = target.closest('.js-popup-diary-row').dataset.id;
+      const entry = state.diary.find((d) => d.Id === id);
+      els.globalSearchPopup.classList.add('hidden');
+      if (entry) {
+        state.diaryDateFilter = (entry.Timestamp || '').slice(0, 10);
+        els.diaryDateInput.value = state.diaryDateFilter;
+        switchSection('diary');
+        renderDiary();
+        const card = els.diaryList.querySelector(`.item-card[data-id="${id}"]`);
+        card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openDiaryDetailModal(entry);
+      }
+      return;
+    }
+
     // Pending actions
     if (target.closest('.js-pending-open')) {
       const btn = target.closest('.js-pending-open');
@@ -1077,6 +1309,47 @@ function bindEvents() {
       const idx = Number(target.closest('.js-remove-draft-att').dataset.idx);
       state.draftAttachments.splice(idx, 1);
       renderDraftAttachments();
+      return;
+    }
+
+    // Quick Notes chips & table actions
+    if (target.closest('.js-quick-note-chip')) {
+      const id = target.closest('.js-quick-note-chip').dataset.id;
+      const note = state.quickNotes.find((n) => n.Id === id);
+      if (note) insertTextIntoDiaryEditor(note.Text);
+      return;
+    }
+    if (target.closest('.js-qn-use')) {
+      const id = target.closest('.js-qn-use').dataset.id;
+      const note = state.quickNotes.find((n) => n.Id === id);
+      if (note) {
+        insertTextIntoDiaryEditor(note.Text);
+        els.quickNotesModal.classList.add('hidden');
+      }
+      return;
+    }
+    if (target.closest('.js-qn-edit')) {
+      const id = target.closest('.js-qn-edit').dataset.id;
+      const note = state.quickNotes.find((n) => n.Id === id);
+      if (note) {
+        state.editingQuickNoteId = note.Id;
+        els.quickNoteInput.value = note.Text;
+        els.saveQuickNoteBtn.textContent = '💾 Salva';
+        els.cancelQuickNoteEditBtn.classList.remove('hidden');
+        els.quickNoteInput.focus();
+      }
+      return;
+    }
+    if (target.closest('.js-qn-delete')) {
+      const id = target.closest('.js-qn-delete').dataset.id;
+      const note = state.quickNotes.find((n) => n.Id === id);
+      if (note && confirm(`Vuoi eliminare la nota pronta "${note.Text}"?`)) {
+        if (state.editingQuickNoteId === id) resetQuickNoteEditMode();
+        await storage.deleteQuickNote(id);
+        state.quickNotes = await storage.getQuickNotes();
+        renderQuickNotesChips();
+        renderQuickNotesTable();
+      }
       return;
     }
 

@@ -24,7 +24,7 @@
         <div class="brand-text-group">
           <div class="brand-title-row">
             <h1 class="brand-title">MemoBam</h1>
-            <span class="version-label">v1.5.0</span>
+            <span class="version-label">v1.6.0</span>
             <span class="brand-subtitle desktop-only">• Archivio Lavori &amp; Diario</span>
           </div>
           <span id="storageBadge" class="storage-badge" title="Origine dati attiva">Cache Locale (Offline)</span>
@@ -56,6 +56,22 @@
         </button>
       </div>
     </header>
+
+    <!-- Top-Level Global Search Bar (across Archive & Diary) -->
+    <section id="globalSearchBar" class="global-search-bar" aria-label="Ricerca globale">
+      <span class="global-search-ico" aria-hidden="true">🔍</span>
+      <input id="globalSearchInput" type="search" class="field-input global-search-input"
+        placeholder="Ricerca globale in Archivio e Diario (titolo, testo, file, data, ora)..." autocomplete="off">
+      <input id="globalDateInput" type="date" class="field-input date-input"
+        title="Filtra globalmente Archivio e Diario per data">
+      <button id="clearGlobalSearchBtn" type="button" class="btn btn-neutral btn-sm">Pulisci</button>
+      <div id="globalSearchCounts" class="global-search-counts hidden">
+        <button id="globalArchiveCountBtn" type="button" class="btn btn-xs btn-soft-blue"
+          title="Vai ai risultati in Archivio Documenti">📁 0 Archivio</button>
+        <button id="globalDiaryCountBtn" type="button" class="btn btn-xs btn-soft-purple"
+          title="Vai ai risultati nel Diario Giornaliero">📓 0 Diario</button>
+      </div>
+    </section>
 
     <!-- Top Alert for Unchecked ("Da terminare") Items -->
     <section id="pendingBanner" class="pending-banner hidden" aria-live="polite">
@@ -134,14 +150,6 @@
           <!-- TAB 1: Archivio Documenti -->
           <div id="archiveTabContent" class="tab-content active" data-pane="archive">
             <div class="search-card">
-              <div class="search-row">
-                <div class="search-input-wrap">
-                  <input id="searchInput" type="search" class="field-input"
-                    placeholder="Cerca titolo, data (20/11/2026) o ora..." autocomplete="off">
-                </div>
-                <input id="dateFilterInput" type="date" class="field-input date-input" title="Filtra per data specifica">
-                <button id="clearSearchBtn" type="button" class="btn btn-neutral btn-sm">Pulisci</button>
-              </div>
               <label class="checkbox-inline"
                 title="Se attivo, nasconde in Archivio Documenti gli allegati collegati alle righe del Diario">
                 <input id="excludeDiaryAttachmentsChk" type="checkbox" checked>
@@ -156,19 +164,22 @@
 
           <!-- TAB 2: Diario Giornaliero -->
           <div id="diaryTabContent" class="tab-content" data-pane="diary">
-            <!-- Diary Controls: Date + Today + All Days + Search -->
+            <!-- Diary Controls: Date + Today + All Days -->
             <div class="diary-controls-card">
               <input id="diaryDateInput" type="date" class="field-input date-input" title="Giorno del diario">
               <button id="diaryTodayBtn" type="button" class="btn btn-soft-blue btn-sm">Oggi</button>
               <button id="diaryAllDaysBtn" type="button" class="btn btn-neutral btn-sm">Tutti i giorni</button>
-              <div class="diary-search-wrap">
-                <input id="diarySearchInput" type="search" class="field-input"
-                  placeholder="Cerca nel diario (testo, data o ora)..." autocomplete="off">
-              </div>
             </div>
 
-            <!-- Quick Record Input with Formatting Toolbar -->
+            <!-- Quick Record Input with Quick Notes & Formatting Toolbar -->
             <div class="diary-composer">
+              <div class="quick-notes-bar">
+                <span class="quick-notes-label">⚡ Note pronte:</span>
+                <div id="quickNotesChips" class="quick-notes-chips"></div>
+                <button id="manageQuickNotesBtn" type="button" class="btn btn-xs btn-neutral"
+                  title="Apri la tabella separata per gestire le note pronte">⚙️ Gestisci</button>
+              </div>
+
               <div class="composer-toolbar">
                 <button id="fmtBoldBtn" type="button" class="fmt-btn fmt-bold" title="Grassetto (Ctrl+B)">B</button>
                 <button id="fmtItalicBtn" type="button" class="fmt-btn fmt-italic" title="Corsivo (Ctrl+I)">I</button>
@@ -296,6 +307,76 @@
       <div class="modal-footer">
         <button id="cancelDiaryDetailBtn" type="button" class="btn btn-neutral">Chiudi</button>
         <button id="saveDiaryDetailBtn" type="button" class="btn btn-primary">💾 Salva modifiche</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Notes ("Note Pronte") Management Table Modal -->
+  <div id="quickNotesModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+    aria-labelledby="quickNotesModalTitle">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <h3 id="quickNotesModalTitle">⚡ Tabella Note Pronte per il Diario</h3>
+        <button id="closeQuickNotesModalBtn" class="icon-btn" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="quick-notes-add-row">
+          <input id="quickNoteInput" type="text" class="field-input"
+            placeholder="Nuova nota pronta (es. Listino cavi aggiornato)..." autocomplete="off">
+          <button id="saveQuickNoteBtn" type="button" class="btn btn-primary btn-sm">➕ Aggiungi</button>
+          <button id="cancelQuickNoteEditBtn" type="button" class="btn btn-neutral btn-sm hidden">Annulla</button>
+        </div>
+
+        <div class="quick-notes-table-wrap">
+          <table class="quick-notes-table">
+            <thead>
+              <tr>
+                <th>Nota pronta</th>
+                <th class="col-actions">Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="quickNotesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="closeQuickNotesFooterBtn" type="button" class="btn btn-neutral">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top-Level Global Search Parallel Results Popup -->
+  <div id="globalSearchPopup" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+    aria-labelledby="globalSearchPopupTitle">
+    <div class="modal-card modal-card-xl">
+      <div class="modal-header">
+        <div class="detail-header-info">
+          <h3 id="globalSearchPopupTitle">🔍 Risultati Ricerca Parallela</h3>
+          <span id="globalSearchPopupSubtitle" class="detail-timestamp"></span>
+        </div>
+        <button id="closeGlobalPopupTopBtn" class="btn btn-neutral btn-sm" type="button">✕ Chiudi</button>
+      </div>
+      <div class="modal-body global-popup-body">
+        <div class="parallel-results-grid">
+          <section class="parallel-col">
+            <div class="parallel-col-header">
+              <h4>📁 Archivio Documenti</h4>
+              <span id="popupArchiveBadge" class="count-pill">0</span>
+            </div>
+            <div id="popupArchiveList" class="parallel-col-list"></div>
+          </section>
+
+          <section class="parallel-col">
+            <div class="parallel-col-header">
+              <h4>📓 Diario / Agenda</h4>
+              <span id="popupDiaryBadge" class="count-pill">0</span>
+            </div>
+            <div id="popupDiaryList" class="parallel-col-list"></div>
+          </section>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="closeGlobalPopupFooterBtn" type="button" class="btn btn-neutral">Chiudi</button>
       </div>
     </div>
   </div>
